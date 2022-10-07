@@ -5,12 +5,18 @@ const PORT = 3000;
 
 app.use(express.json());
 
-app.post("/", (req, res) => {
+app.get("/", (req, res) => {
   const message = req.body.dummy || "nothing";
 
   setTimeout(() => {
     res.send({ message });
-  }, 1000)
+  }, 3000)
+});
+
+app.post("/", (req, res) => {
+  setTimeout(() => {
+    res.status(403).end();
+  }, 2000)
 });
 
 app.listen(PORT, () => {

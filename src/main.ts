@@ -11,17 +11,38 @@ declare module "axios" {
   }
 }
 
+class Metric {
+  private unitTime: string;
+  private beginTime: number;
+
+  init() {
+    this.unitTime = "milliseconds"
+    this.beginTime = new Date().getTime()
+  }
+
+  getMeta() {
+    const unitTime = this.unitTime;
+    const beginTime = this.beginTime;
+    const finishTime = new Date().getTime();
+    const durationTime = finishTime - beginTime;
+
+    return {
+      unitTime,
+      beginTime,
+      finishTime,
+      durationTime
+    }
+  }
+}
+
 export default (instance: AxiosInstance) => {
+
+  const metrics = new Metric();
 
   // Add a request interceptor
   instance.interceptors.request.use((config) => {
 
-    const meta = {
-      unitTime: "milliseconds",
-      beginTime: new Date().getTime()
-    }
-
-    Object.assign(config, { meta });
+    metrics.init();
 
     return config;
   }, (error) => Promise.reject(error));
@@ -29,13 +50,16 @@ export default (instance: AxiosInstance) => {
   // Add a response interceptor
   instance.interceptors.response.use((response) => {
 
-    const beginTime = response.config.meta.beginTime;
-    const finishTime = new Date().getTime();
-    const durationTime = finishTime - beginTime;
-
-    Object.assign(response.config.meta, { finishTime, durationTime });
+    const meta = metrics.getMeta();
+    Object.assign(response.config, { meta });
 
     return response;
-  }, (error) => Promise.reject(error));
+  }, (error) => {
+
+    const meta = metrics.getMeta();
+    Object.assign(error.config, { meta });
+
+    return Promise.reject(error)
+  });
 };
 
